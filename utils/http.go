@@ -49,12 +49,14 @@ func (root *rootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, "trust", root.trust)
 	ctx = context.WithValue(ctx, "http.request", r)
 
-	//	access := buildAccessRecords(vars["imageName"], root.actions...)
-	//	var err error
-	//	if ctx, err = root.auth.Authorized(ctx, access...); err != nil {
-	//		http.Error(w, err.Error(), http.StatusUnauthorized)
-	//		return
-	//	}
+	access := buildAccessRecords(vars["imageName"], root.actions...)
+	var err error
+	if root.auth != nil {
+		if ctx, err = root.auth.Authorized(ctx, access...); err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+	}
 	if err := root.handler(ctx, w, r); err != nil {
 		logrus.Error("[Notary Server] ", err.Error())
 		http.Error(w, err.Error(), err.HTTPStatus)
